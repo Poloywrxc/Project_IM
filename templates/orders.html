@@ -16,109 +16,85 @@
     .status-cancelled { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     .status-completed { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     
-    /* Payment Info Layout */
-    .payment-details { line-height: 1.2; }
     .payment-method-label {
         font-weight: 700;
         color: var(--compu-blue);
-        margin-bottom: 3px;
         display: block;
     }
-    .money-text { font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
 
-    /* Table Improvements */
-    .order-table-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        overflow: hidden;
+    /* Modal Styling */
+    .modal-content {
+        border-radius: 20px;
+        border: none;
     }
-    .btn-action {
-        font-size: 0.75rem;
-        font-weight: 600;
-        border-radius: 6px;
+    .modal-header {
+        background-color: var(--compu-blue);
+        color: white;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
     }
 </style>
 
-<div class="container mt-5">
+<div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold text-dark">Order History</h2>
-            <p class="text-muted">View your transactions and track fulfillment status.</p>
-        </div>
-        <span class="badge bg-secondary rounded-pill px-3 py-2">Records Found: {{ orders|length }}</span>
+        <h2 class="fw-bold text-compu-blue"><i class="bi bi-bag-check me-2"></i>My Orders</h2>
     </div>
 
-    <div class="order-table-card">
+    <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th class="ps-4">ID</th>
-                        <th>Date</th>
-                        <th>Fulfillment</th>
+                        <th class="ps-4">Order ID & Date</th>
+                        <th>Product Name</th>
                         <th>Payment Details</th>
-                        <th>Total Amount</th>
                         <th>Status</th>
-                        <th class="text-center">Actions</th>
+                        <th class="pe-4 text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for order in orders %}
                     <tr class="order-row" data-id="{{ order.transaction_id }}">
-                        <td class="ps-4 fw-bold">#{{ order.transaction_id }}</td>
-                        <td class="text-muted small">{{ order.created_at }}</td>
-                        <td>
-                            <div class="fw-bold">{{ order.fulfillment_method }}</div>
-                            <small class="text-muted">Rider: {{ order.rider_name or 'None' }}</small>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">#{{ order.transaction_id }}</div>
+                            <div class="small text-muted">{{ order.created_at }}</div>
                         </td>
+                        <td class="fw-bold">{{ order.product_name }}</td>
                         <td>
                             <div class="payment-details">
                                 <span class="payment-method-label">
-                                    <i class="bi {% if order.payment_method == 'Cash' %}bi-cash-stack{% else %}bi-credit-card{% endif %} me-1"></i>
-                                    {{ order.payment_method }}
+                                    <i class="bi 
+                                        {% if order.payment_method|lower == 'cash' %}bi-cash-stack
+                                        {% elif 'credit' in order.payment_method|lower %}bi-credit-card
+                                        {% else %}bi-wallet2{% endif %} me-1">
+                                    </i>
                                 </span>
-                                
-                                {% if order.payment_method == 'Cash' %}
-                                <div class="money-text text-muted">
-                                    Tendered: ₱{{ "{:,.2f}".format(order.amount_tendered or 0) }}
+                                <div class="text-success fw-bold small">
+                                    ₱{{ "{:,.2f}".format(order.total_amount) }}
                                 </div>
-                                <div class="money-text text-success fw-bold">
-                                    Change: ₱{{ "{:,.2f}".format(order.change_given or 0) }}
-                                </div>
-                                {% else %}
-                                <small class="text-muted italic">Electronic Payment</small>
-                                {% endif %}
                             </div>
                         </td>
                         <td>
-                            <span class="fw-bold fs-6">₱{{ "{:,.2f}".format(order.total_amount) }}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ order.status.lower() }}">
+                            <span class="status-badge status-{{ order.status|lower }}">
                                 {{ order.status }}
                             </span>
                         </td>
-                        <td class="text-center">
+                        <td class="pe-4 text-center">
                             <div class="btn-group">
-                                {% if order.status == 'Pending' %}
-                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="cancelTransaction(this)">
-                                    Cancel
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="viewOrderDetails('{{ order.transaction_id }}', '{{ order.product_name }}', '{{ order.total_amount }}', '{{ order.payment_method }}', '{{ order.status }}', '{{ order.created_at }}')"
+                                        title="View Details">
+                                    <i class="bi bi-eye"></i>
                                 </button>
-                                {% endif %}
-                                <button class="btn btn-sm btn-outline-secondary btn-action ms-1" onclick="deleteTransaction(this)">
-                                    <i class="bi bi-trash"></i>
+                                <button class="btn btn-sm btn-outline-danger" onclick="cancelTransaction(this)" title="Cancel Order">
+                                    <i class="bi bi-x-circle"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center py-5">
-                            <i class="bi bi-inbox display-4 text-muted d-block mb-2"></i>
-                            <p class="text-muted">You haven't placed any orders yet.</p>
-                            <a href="/products" class="btn btn-primary btn-sm rounded-pill px-4">Shop Now</a>
-                        </td>
+                        <td colspan="5" class="text-center py-5 text-muted">You haven't placed any orders yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -127,8 +103,68 @@
     </div>
 </div>
 
+<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <p class="text-muted mb-1 small uppercase fw-bold">Transaction ID</p>
+                    <h3 class="fw-bold text-dark" id="m_id">#000</h3>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="text-muted small d-block">Order Date</label>
+                        <span id="m_date" class="fw-bold">--</span>
+                    </div>
+                    <div class="col-6 text-end">
+                        <label class="text-muted small d-block">Status</label>
+                        <span id="m_status" class="badge">--</span>
+                    </div>
+                    <div class="col-12 border-top pt-3">
+                        <label class="text-muted small d-block">Product Purchased</label>
+                        <span id="m_product" class="fs-5 fw-bold text-compu-blue">--</span>
+                    </div>
+                    <div class="col-6 border-top pt-3">
+                        <label class="text-muted small d-block">Payment Method</label>
+                        <span id="m_payment" class="fw-bold">--</span>
+                    </div>
+                    <div class="col-6 border-top pt-3 text-end">
+                        <label class="text-muted small d-block">Total Paid</label>
+                        <span id="m_total" class="fs-5 fw-bold text-success">₱0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Updates status to 'Cancelled'
+    function viewOrderDetails(id, product, total, method, status, date) {
+        // Set content
+        document.getElementById('m_id').innerText = '#' + id;
+        document.getElementById('m_date').innerText = date;
+        document.getElementById('m_product').innerText = product;
+        document.getElementById('m_payment').innerText = method;
+        document.getElementById('m_total').innerText = '₱' + parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
+        
+        // Handle Status Badge
+        const statusBadge = document.getElementById('m_status');
+        statusBadge.innerText = status;
+        statusBadge.className = 'status-badge status-' + status.toLowerCase();
+
+        // Show Modal
+        var myModal = new bootstrap.Modal(document.getElementById('orderModal'));
+        myModal.show();
+    }
+
     async function cancelTransaction(btn) {
         const row = btn.closest('.order-row');
         const id = row.dataset.id;
@@ -137,23 +173,7 @@
             if (res.ok) {
                 location.reload();
             } else {
-                alert("Failed to cancel order.");
-            }
-        }
-    }
-
-    // Permanently deletes the order record
-    async function deleteTransaction(btn) {
-        const row = btn.closest('.order-row');
-        const id = row.dataset.id;
-        if(confirm("Permanently delete this order record? This cannot be undone.")) {
-            const res = await fetch(`/delete-order?id=${id}`, { method: 'POST' });
-            if (res.ok) {
-                row.style.transition = "0.5s";
-                row.style.opacity = "0";
-                setTimeout(() => row.remove(), 500);
-            } else {
-                alert("Failed to delete record.");
+                alert("Action failed.");
             }
         }
     }

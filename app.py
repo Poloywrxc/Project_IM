@@ -167,26 +167,26 @@ def orders(request):
         return redirect("/")
 
     db = get_db()
-    # We rename columns in the query to match the HTML expectations
-    items = db.execute("""
+    
+    query = """
         SELECT 
-            order_transaction_id AS transaction_id, 
-            total_amount, 
-            payment_method, 
-            fulfillment_method, 
-            rider_name, 
-            amount_tendered,
-            change_given,
-            status, 
-            order_date AS created_at
-        FROM order_transactions 
-        WHERE user_id = ?
-        ORDER BY order_date DESC
-    """, (user['user_id'],)).fetchall()
+            ot.order_transaction_id AS transaction_id, 
+            ot.total_amount, 
+            ot.payment_method, 
+            ot.status, 
+            ot.order_date AS created_at,
+            p.model_name AS product_name
+        FROM order_transactions ot
+        INNER JOIN products p ON ot.product_id = p.product_id
+        WHERE ot.user_id = ?
+        ORDER BY ot.order_date DESC
+    """
+    
+    items = db.execute(query, (user['user_id'],)).fetchall()
     db.close()
     
     return render("orders.html", orders=items, title="My Orders")
-
+    
 def cancel_order(request):
     """Updates order status to 'Cancelled' via POST"""
     # Check if it's a POST request as sent by your JS
@@ -286,6 +286,7 @@ def about(request):
     return render("about.html", title="About Us")
 
 def login_view(request):
+    error_message = None
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -306,18 +307,10 @@ def login_view(request):
                 return redirect("/admin")
             return redirect("/home")
         else:
-            error_data = {
-                "status": "error",
-                "message": "Invalid email or password"
-            }
-            return Response(
-                json.dumps(error_data), 
-                status=401, 
-                content_type="application/json"
-            )
-
+            error_message = "Invalid email or password"
+            
     today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    return render("login.html", today=today, title="Login")
+    return render("login.html", today=today, title="Login", error=error_message)
 
 def register(request):
     if request.method == 'POST':
@@ -472,36 +465,44 @@ def add_user(request):
         email = request.form.get('email')
         password = request.form.get('password')
         role = request.form.get('role')
+        # Add these two:
+        address = request.form.get('address')
+        birthdate = request.form.get('birthdate')
+        
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         db = get_db()
         try:
             db.execute("""
-                INSERT INTO users (full_name, email, password_hash, role, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (full_name, email, generate_password_hash(password), role, now, now))
+                INSERT INTO users (full_name, email, password_hash, role, address, birthdate, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (full_name, email, generate_password_hash(password), role, address, birthdate, now, now))
             db.commit()
         except Exception as e:
             print(f"Error adding user: {e}")
         finally:
             db.close()
     return redirect("/users")
-
-# 2. EDIT USER (via Modal)
+    
+# edit_user
 def edit_user(request):
     if request.method == 'POST':
         user_id = request.form.get('user_id')
         full_name = request.form.get('fullname')
         email = request.form.get('email')
         role = request.form.get('role')
+        # Add these two:
+        address = request.form.get('address')
+        birthdate = request.form.get('birthdate')
+        
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         db = get_db()
         db.execute("""
             UPDATE users 
-            SET full_name = ?, email = ?, role = ?, updated_at = ?
+            SET full_name = ?, email = ?, role = ?, address = ?, birthdate = ?, updated_at = ?
             WHERE user_id = ?
-        """, (full_name, email, role, now, user_id))
+        """, (full_name, email, role, address, birthdate, now, user_id))
         db.commit()
         db.close()
     return redirect("/users")
