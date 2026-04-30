@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Management | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --compu-blue: #002D72; }
+        body { background-color: #f8f9fa; }
+        .admin-nav { background-color: var(--compu-blue); padding: 1rem 2rem; border-bottom: 3px solid #001a44; }
+        .text-compu-blue { color: var(--compu-blue); }
+        .table-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .status-pill { font-size: 0.75rem; font-weight: 700; padding: 0.35em 0.8em; border-radius: 50px; text-transform: uppercase; }
+        .modal-header { background-color: var(--compu-blue); color: white; }
+    </style>
+</head>
+<body>
+
+<header class="admin-nav d-flex justify-content-between align-items-center shadow mb-5">
+    <h4 class="fw-bold text-white mb-0">COMPUCART <span class="badge bg-danger ms-2">ADMIN</span></h4>
+    <a href="/admin" class="btn btn-sm btn-outline-light rounded-pill px-4 fw-bold">
+        <i class="bi bi-arrow-left me-1"></i> Dashboard
+    </a>
+</header>
+
+<div class="container-fluid px-5">
+    <div class="row mb-4 align-items-end">
+        <div class="col">
+            <h2 class="fw-bold text-compu-blue">Order Transaction Logs</h2>
+            <p class="text-muted">Real-time audit of all sales, fulfillment, and payment data.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-success rounded-pill px-4 shadow-sm" onclick="window.print()">
+                <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export Report
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Order Date</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Fulfillment</th>
+                        <th>Payment</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th class="pe-4">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="ps-4 fw-bold">#{{ tx.order_transaction_id }}</td>
+                        <td class="small">{{ tx.order_date }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ tx.customer_name }}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.7rem;">Rider: {{ tx.rider_name or 'N/A' }}</div>
+                        </td>
+                        <td>{{ tx.product_name }}</td>
+                        <td><span class="text-secondary small">{{ tx.fulfillment_method }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ tx.payment_method }}</span></td>
+                        <td class="fw-bold text-compu-blue">₱{{ "{:,.2f}".format(tx.total_amount) }}</td>
+                        <td>
+                            {% if tx.status|lower == 'pending' %}
+                                <span class="status-pill bg-warning text-dark">Pending</span>
+                            {% elif tx.status|lower == 'completed' %}
+                                <span class="status-pill bg-success text-white">Completed</span>
+                            {% elif tx.status|lower == 'cancelled' %}
+                                <span class="status-pill bg-danger text-white">Cancelled</span>
+                            {% else %}
+                                <span class="status-pill bg-secondary text-white">{{ tx.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-4">
+                            <button class="btn btn-sm btn-light border rounded-pill px-3" 
+                                    onclick="openTransactionModal('{{ tx.order_transaction_id }}', '{{ tx.status }}', '{{ tx.total_amount }}', '{{ tx.amount_tendered or 0 }}')">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted fst-italic">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No transactions recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="txModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/update-transaction" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Processing</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="tx_id" id="mdl_tx_id">
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Transaction Status</label>
+                    <select name="status" id="mdl_status" class="form-select border-primary">
+                        <option value="Pending">Pending</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="bg-light p-3 rounded-3 border">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Total Amount Due</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">₱</span>
+                            <input type="text" id="mdl_total" class="form-control bg-white border-start-0 fw-bold fs-5" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Amount Tendered (Given)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">₱</span>
+                            <input type="number" step="0.01" name="amount_tendered" id="mdl_tendered" 
+                                   class="form-control border-start-0 fw-bold fs-5" placeholder="0.00" 
+                                   oninput="calculateChange()">
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-bold small text-uppercase">Change</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">₱</span>
+                            <input type="text" id="mdl_change" class="form-control bg-white border-start-0 fw-bold fs-5" readonly value="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Update Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function openTransactionModal(id, status, total, tendered) {
+        document.getElementById('mdl_tx_id').value = id;
+        document.getElementById('mdl_status').value = status;
+        document.getElementById('mdl_total').value = parseFloat(total).toFixed(2);
+        document.getElementById('mdl_tendered').value = (tendered > 0) ? tendered : "";
+        
+        calculateChange(); 
+
+        var myModal = new bootstrap.Modal(document.getElementById('txModal'));
+        myModal.show();
+    }
+
+    function calculateChange() {
+        const total = parseFloat(document.getElementById('mdl_total').value) || 0;
+        const tendered = parseFloat(document.getElementById('mdl_tendered').value) || 0;
+        const changeField = document.getElementById('mdl_change');
+        
+        const change = tendered - total;
+        
+        if (tendered === 0) {
+            changeField.value = "0.00";
+            changeField.className = "form-control bg-white border-start-0 fw-bold fs-5";
+        } else if (change < 0) {
+            changeField.value = "Insufficient";
+            changeField.className = "form-control bg-white border-start-0 fw-bold fs-5 text-danger";
+        } else {
+            changeField.value = change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            changeField.className = "form-control bg-white border-start-0 fw-bold fs-5 text-success";
+        }
+    }
+</script>
+
+</body>
+</html>

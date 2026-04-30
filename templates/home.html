@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="bg-white py-5">
+    <div class="container">
+        <div class="row align-items-center py-5">
+            <div class="col-lg-5">
+                <h1 class="display-5 fw-bold mb-4" style="color: #222; letter-spacing: -1px; line-height: 1.2;">
+                    SHOP COMPUTER DEVICES AND ACCESSORIES WITH EASE
+                </h1>
+                <p class="lead text-muted mb-4" style="font-size: 1.1rem;">
+                    Browse, compare, and purchase laptops, desktops, peripherals, and accessories in one secure online marketplace.
+                </p>
+                <a href="/products" class="btn btn-lg text-white px-5 py-2 fw-bold shadow-sm" 
+                   style="background-color: #0012b3; border-radius: 8px; border: none;">
+                    Shop Now
+                </a>
+            </div>
+            
+            <div class="col-lg-7 mt-5 mt-lg-0">
+                <img src="{{ url_for('static', filename='hero-devices.png') }}" 
+                     class="img-fluid" 
+                     alt="Computer Gear Showcase">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5" style="background-color: #f0f2ff;">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 20px;">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-display fs-1 me-3 text-dark"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Browse Products</h6>
+                            <p class="small text-muted mb-0">Explore computer devices and accessories by category.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 20px;">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-cart-check fs-1 me-3 text-dark"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Secure Checkout</h6>
+                            <p class="small text-muted mb-0">Add items to your cart and complete purchases safely.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 20px;">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-truck fs-1 me-3 text-dark"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Track Orders</h6>
+                            <p class="small text-muted mb-0">Monitor your order status and history anytime.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

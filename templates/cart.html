@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    :root { --compu-blue: #002D72; }
+    .form-check-input:checked { background-color: var(--compu-blue); border-color: var(--compu-blue); }
+    .qty-btn { width: 30px; height: 30px; border: 1px solid #ddd; background: #fff; border-radius: 50%; cursor: pointer; font-weight: bold; }
+    .qty-input { width: 40px; text-align: center; border: none; background: transparent; font-weight: bold; }
+    .unselected-row { opacity: 0.4; transition: 0.3s; }
+    .btn-delete { color: #dc3545; background: none; border: none; transition: 0.3s; padding: 5px; }
+    
+    /* Selection Cards for Fulfillment & Payment */
+    .selection-card { 
+        border: 2px solid #eee; 
+        transition: 0.3s; 
+        cursor: pointer; 
+        text-align: center; 
+        padding: 15px; 
+        border-radius: 12px; 
+        display: block; 
+        height: 100%;
+    }
+    .btn-check:checked + .selection-card {
+        border-color: var(--compu-blue);
+        background-color: #f8f9ff;
+        color: var(--compu-blue);
+    }
+    .selection-card i { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+</style>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Shopping Cart</h4>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAll" onclick="toggleAll(this)" checked>
+                            <label class="form-check-label fw-bold" for="selectAll">Select All</label>
+                        </div>
+                    </div>
+
+                    {% for item in cart_items %}
+                    <div class="product-row mb-3 p-3 border-bottom" data-id="{{ item.id }}" data-price="{{ item.SellingPrice }}">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <input class="form-check-input item-checkbox" type="checkbox" checked onclick="recalculateGrandTotal()">
+                            </div>
+                            <div class="col">
+                                <h6 class="fw-bold mb-1">{{ item.ModelName }}</h6>
+                                <span class="fw-bold text-primary">₱{{ "{:,.2f}".format(item.SellingPrice) }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center bg-light rounded-pill p-1">
+                                    <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+                                    <input type="text" class="qty-input" value="1" readonly>
+                                    <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn-delete" onclick="removeItem(this)">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-cart-x display-1 text-muted"></i>
+                        <p class="mt-3 fs-5">Your cart is empty.</p>
+                        <a href="/products" class="btn btn-primary rounded-pill px-4">Continue Shopping</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Fulfillment Method</h6>
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="fulfillment" id="f_pickup" value="Pickup" checked onclick="recalculateGrandTotal()">
+                            <label class="selection-card" for="f_pickup">
+                                <i class="bi bi-building"></i>
+                                <span class="d-block fw-bold small">J&T Main Hub</span>
+                                <small class="text-muted">Pickup (₱0)</small>
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="fulfillment" id="f_delivery" value="Delivery" onclick="recalculateGrandTotal()">
+                            <label class="selection-card" for="f_delivery">
+                                <i class="bi bi-truck"></i>
+                                <span class="d-block fw-bold small">J&T Delivery</span>
+                                <small class="text-muted">Rider (+₱100)</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-3">Payment Method</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="payment_method" id="p_cash" value="Cash" checked>
+                            <label class="selection-card" for="p_cash">
+                                <i class="bi bi-cash-stack"></i>
+                                <span>Cash</span>
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="btn-check" name="payment_method" id="p_credit" value="Credit">
+                            <label class="selection-card" for="p_credit">
+                                <i class="bi bi-credit-card"></i>
+                                <span>Credit</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Order Summary</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>₱<span id="subtotal">0.00</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted small">
+                        <span>Tax</span>
+                        <span>₱100.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted small">
+                        <span>Delivery Fee (J&T)</span>
+                        <span id="delivery-fee-display">₱0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fw-bold fs-5">Grand Total</span>
+                        <span class="fw-bold fs-5 text-primary">₱<span id="grand-total">0.00</span></span>
+                    </div>
+                    <button class="btn btn-primary w-100 py-3 rounded-pill fw-bold" onclick="processCheckout()">
+                        CONFIRM ORDER
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', recalculateGrandTotal);
+
+    function updateQty(btn, delta) {
+        const input = btn.parentElement.querySelector('.qty-input');
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        input.value = val;
+        recalculateGrandTotal();
+    }
+
+    function recalculateGrandTotal() {
+        let subtotal = 0;
+        document.querySelectorAll('.product-row').forEach(row => {
+            const cb = row.querySelector('.item-checkbox');
+            if (cb.checked) {
+                const price = parseFloat(row.dataset.price);
+                const qty = parseInt(row.querySelector('.qty-input').value);
+                subtotal += (price * qty);
+                row.classList.remove('unselected-row');
+            } else {
+                row.classList.add('unselected-row');
+            }
+        });
+
+        const isDelivery = document.getElementById('f_delivery').checked;
+        const deliveryFee = isDelivery ? 100.00 : 0.00;
+        const tax = 100.00;
+        const grandTotal = subtotal + tax + deliveryFee;
+
+        document.getElementById('subtotal').innerText = subtotal.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('delivery-fee-display').innerText = `₱${deliveryFee.toFixed(2)}`;
+        document.getElementById('grand-total').innerText = grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    function toggleAll(master) {
+        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = master.checked);
+        recalculateGrandTotal();
+    }
+
+    async function removeItem(btn) {
+        const row = btn.closest('.product-row');
+        if(confirm("Remove this item?")) {
+            const res = await fetch(`/remove-from-cart?id=${row.dataset.id}`);
+            if (res.ok) { 
+                row.remove(); 
+                recalculateGrandTotal(); 
+                if(!document.querySelector('.product-row')) location.reload(); 
+            }
+        }
+    }
+
+    async function processCheckout() {
+        const selected = document.querySelectorAll('.item-checkbox:checked');
+        if (selected.length === 0) {
+            alert("Please select at least one item.");
+            return;
+        }
+
+        const fulfillmentType = document.querySelector('input[name="fulfillment"]:checked').value;
+        
+        const data = {
+            fulfillment: fulfillmentType,
+            payment: document.querySelector('input[name="payment_method"]:checked').value,
+            rider_name: (fulfillmentType === 'Delivery') ? 'J&T Express' : 'None (Pickup)',
+            items: Array.from(selected).map(cb => ({
+                id: cb.closest('.product-row').dataset.id,
+                qty: cb.closest('.product-row').querySelector('.qty-input').value
+            }))
+        };
+
+        const res = await fetch('/confirm-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            window.location.href = "/orders";
+        } else {
+            alert("Checkout failed.");
+        }
+    }
+</script>
+{% endblock %}

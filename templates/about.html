@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Content Specific Styles - Only styles unique to About page */
+    .about-hero {
+        padding: 80px 10% 40px 10%;
+        display: flex;
+        align-items: center;
+        gap: 60px;
+        min-height: 70vh;
+    }
+
+    .text-content { flex: 1; }
+    .image-content { flex: 1; }
+
+    .brand-accent {
+        color: #1a237e;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .text-content h2 {
+        font-size: 3rem;
+        margin: 0 0 25px 0;
+        line-height: 1.1;
+        color: #111;
+    }
+
+    .text-content p {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #555;
+        margin-bottom: 30px;
+    }
+
+    .specs-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+
+    .spec-item h3 {
+        font-size: 1rem;
+        margin: 0 0 8px 0;
+        color: #1a237e;
+    }
+
+    .spec-item p {
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .hero-image-wrapper {
+        background: #f5f5f7;
+        border-radius: 30px;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .hero-image-wrapper img {
+        max-width: 100%;
+        height: auto;
+        filter: drop-shadow(0 20px 40px rgba(0,0,0,0.1));
+    }
+
+    @media (max-width: 992px) {
+        .about-hero {
+            flex-direction: column;
+            text-align: center;
+            padding-top: 40px;
+        }
+        .specs-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<main>
+    <section class="about-hero">
+        <div class="text-content">
+            <span class="brand-accent">Beyond Hardware</span>
+            <h2>We engineer the tools for your next breakthrough.</h2>
+            <p>
+                COMPUCART isn't just a store; it's a launchpad for creators, gamers, 
+                and professionals. We meticulously source and verify 
+                every component—from high-refresh monitors to mechanical switches—to 
+                ensure your setup is as efficient as it is powerful.
+            </p>
+
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <h3>Pro-Grade Displays</h3>
+                    <p>4K resolution for seamless gaming and crystal-clear work.</p>
+                </div>
+                <div class="spec-item">
+                    <h3>Tactile Precision</h3>
+                    <p>Mechanical switches designed for zero-latency response.</p>
+                </div>
+                <div class="spec-item">
+                    <h3>Elite Processing</h3>
+                    <p>Workstations equipped with the latest multi-core CPUs.</p>
+                </div>
+                <div class="spec-item">
+                    <h3>High-Speed Data</h3>
+                    <p>NVMe SSD solutions providing up to 2000MB/s speeds.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="image-content">
+            <div class="hero-image-wrapper">
+                <img src="/static/images/business.png" alt="Compucart Device Ecosystem">
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

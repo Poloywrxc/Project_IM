@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --compu-blue: #002D72; }
+        body { background-color: #f8f9fa; }
+        .admin-nav { background-color: var(--compu-blue); padding: 1rem 2rem; border-bottom: 3px solid #001a44; }
+        .text-compu-blue { color: var(--compu-blue); }
+        .table-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .status-badge { font-size: 0.75rem; padding: 0.4em 0.8em; border-radius: 50px; }
+        .fw-mono { font-family: 'Courier New', Courier, monospace; }
+    </style>
+</head>
+<body>
+
+<header class="admin-nav d-flex justify-content-between align-items-center shadow mb-5">
+    <h4 class="fw-bold text-white mb-0">COMPUCART <span class="badge bg-danger ms-2">ADMIN</span></h4>
+    <div class="d-flex gap-2">
+        <a href="/inventory" class="btn btn-sm btn-light rounded-pill px-3 fw-bold">Inventory Logs</a>
+        <a href="/admin" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+</header>
+
+<div class="container-fluid px-5">
+    <div class="row mb-4 align-items-end">
+        <div class="col">
+            <h2 class="fw-bold text-compu-blue">Product Catalog</h2>
+            <p class="text-muted">Manage comprehensive inventory details, pricing, and reorder levels.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                <i class="bi bi-plus-lg me-2"></i>Add New Product
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4 text-nowrap">SKU / Barcode</th>
+                        <th>Model Name</th>
+                        <th>Category</th>
+                        <th>Cost</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in all_items %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-mono small fw-bold">{{ item.sku }}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.7rem;">{{ item.barcode or 'No Barcode' }}</div>
+                        </td>
+                        <td class="fw-bold">{{ item.model_name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ item.category_name }}</span></td>
+                        <td class="text-muted small">₱{{ "{:,.2f}".format(item.cost_price) }}</td>
+                        <td class="text-success fw-bold">₱{{ "{:,.2f}".format(item.selling_price) }}</td>
+                        <td>
+                            {% if item.stock_qty <= (item.reorder_level or 0) %}
+                                <span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> {{ item.stock_qty }}</span>
+                            {% else %}
+                                {{ item.stock_qty }}
+                            {% endif %}
+                            <small class="text-muted">{{ item.unit or 'pcs' }}</small>
+                        </td>
+                        <td>
+                            <span class="status-badge {% if item.status|lower == 'available' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td class="pe-4 text-center text-nowrap">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary px-3" 
+                                        onclick="openEditItemModal(
+                                            '{{ item.product_id }}', 
+                                            '{{ item.model_name }}', 
+                                            '{{ item.category_name }}', 
+                                            '{{ item.sku }}', 
+                                            '{{ item.barcode or '' }}',
+                                            '{{ item.cost_price }}', 
+                                            '{{ item.selling_price }}', 
+                                            '{{ item.stock_qty }}', 
+                                            '{{ item.reorder_level or 0 }}', 
+                                            '{{ item.unit or 'pcs' }}',
+                                            '{{ item.supplier_id }}',
+                                            '{{ item.status }}'
+                                        )">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/delete-item/{{ item.product_id }}" class="btn btn-sm btn-outline-danger px-3" onclick="return confirm('Delete this product?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">No products found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/add-item" method="POST" class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Product Entry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Model Name</label>
+                        <input type="text" name="model_name" class="form-control" placeholder="e.g. ASUS Vivobook 16" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category_name" class="form-control" placeholder="e.g. Laptops" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SKU</label>
+                        <input type="text" name="sku" class="form-control" placeholder="Unique SKU" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Barcode</label>
+                        <input type="text" name="barcode" class="form-control" placeholder="UPC/EAN Code">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cost Price (PHP)</label>
+                        <input type="number" step="0.01" name="cost_price" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Selling Price (PHP)</label>
+                        <input type="number" step="0.01" name="selling_price" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Initial Stock</label>
+                        <input type="number" name="stock_qty" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Unit</label>
+                        <input type="text" name="unit" class="form-control" placeholder="pcs, units, box">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" name="reorder_level" class="form-control" value="5">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Supplier ID</label>
+                        <input type="number" name="supplier_id" class="form-control" placeholder="ID of Supplier">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Available">Available</option>
+                            <option value="Out of Stock">Out of Stock</option>
+                            <option value="Discontinued">Discontinued</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Save Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/edit-item" method="POST" class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Edit Product Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="product_id" id="edit_product_id">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Model Name</label>
+                        <input type="text" name="model_name" id="edit_model_name" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category_name" id="edit_category_name" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SKU</label>
+                        <input type="text" name="sku" id="edit_sku" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Barcode</label>
+                        <input type="text" name="barcode" id="edit_barcode" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cost Price</label>
+                        <input type="number" step="0.01" name="cost_price" id="edit_cost_price" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Selling Price</label>
+                        <input type="number" step="0.01" name="selling_price" id="edit_selling_price" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Stock Quantity</label>
+                        <input type="number" name="stock_qty" id="edit_stock_qty" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Unit</label>
+                        <input type="text" name="unit" id="edit_unit" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" name="reorder_level" id="edit_reorder_level" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Supplier ID</label>
+                        <input type="number" name="supplier_id" id="edit_supplier_id" class="form-control">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Status</label>
+                        <select name="status" id="edit_status" class="form-select">
+                            <option value="Available">Available</option>
+                            <option value="Out of Stock">Out of Stock</option>
+                            <option value="Discontinued">Discontinued</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-dark">Update Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function openEditItemModal(id, model, cat, sku, barcode, cost, sell, stock, reorder, unit, supplier, status) {
+        document.getElementById('edit_product_id').value = id;
+        document.getElementById('edit_model_name').value = model;
+        document.getElementById('edit_category_name').value = cat;
+        document.getElementById('edit_sku').value = sku;
+        document.getElementById('edit_barcode').value = barcode;
+        document.getElementById('edit_cost_price').value = cost;
+        document.getElementById('edit_selling_price').value = sell;
+        document.getElementById('edit_stock_qty').value = stock;
+        document.getElementById('edit_reorder_level').value = reorder;
+        document.getElementById('edit_unit').value = unit;
+        document.getElementById('edit_supplier_id').value = supplier;
+        document.getElementById('edit_status').value = status;
+        
+        var editModal = new bootstrap.Modal(document.getElementById('editItemModal'));
+        editModal.show();
+    }
+</script>
+
+</body>
+</html>

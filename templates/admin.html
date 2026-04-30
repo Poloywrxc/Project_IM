@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | COMPUCART</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --compu-blue: #002D72;
+            --compu-dark: #001a44;
+        }
+
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Blue Header Styling */
+        .admin-nav {
+            background-color: var(--compu-blue);
+            padding: 1rem 2rem;
+            border-bottom: 3px solid var(--compu-dark);
+        }
+
+        .admin-nav h4, .admin-nav span {
+            color: white !important;
+        }
+
+        /* Dashboard Cards */
+        .admin-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+        .text-compu-blue {
+            color: var(--compu-blue);
+        }
+
+        .icon-box {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="admin-nav d-flex justify-content-between align-items-center shadow">
+    <div class="d-flex align-items-center">
+        <h4 class="fw-bold mb-0">COMPUCART <span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">ADMIN PANEL</span></h4>
+    </div>
+    <div class="d-flex align-items-center">
+        <span class="me-3 small d-none d-md-inline">Logged in as: <strong>{{ user.username }}</strong></span>
+        <a href="/logout" class="btn btn-sm btn-outline-light rounded-pill px-4 fw-bold">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+        </a>
+    </div>
+</header>
+
+<main class="container my-5">
+    <div class="row mb-5">
+        <div class="col">
+            <h2 class="fw-bold text-compu-blue">System Overview</h2>
+            <p class="text-muted">Welcome to the central management hub. Select a module to begin.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm rounded-4 p-3 admin-card">
+                <div class="card-body text-center">
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle">
+                        <i class="bi bi-box-seam fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">Inventory Movement</h5>
+                    <p class="small text-muted mb-4">Track stock levels, warehouse ins, and current availability.</p>
+                    <a href="/inventory" class="btn btn-outline-primary btn-sm rounded-pill px-4 w-100">Manage Stock</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm rounded-4 p-3 admin-card">
+                <div class="card-body text-center">
+                    <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle">
+                        <i class="bi bi-truck fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">Suppliers</h5>
+                    <p class="small text-muted mb-4">Maintain vendor contacts and procurement sources.</p>
+                    <a href="/suppliers" class="btn btn-outline-success btn-sm rounded-pill px-4 w-100">View Vendors</a>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm rounded-4 p-3 admin-card">
+                <div class="card-body text-center">
+                    <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle">
+                        <i class="bi bi-receipt-cutoff fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">All Transactions</h5>
+                    <p class="small text-muted mb-4">Monitor sales performance, refunds, and financial logs.</p>
+                    <a href="/transactions" class="btn btn-outline-info btn-sm rounded-pill px-4 w-100">Audit History</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm rounded-4 p-3 admin-card">
+                <div class="card-body text-center">
+                    <div class="icon-box bg-danger bg-opacity-10 text-danger rounded-circle">
+                        <i class="bi bi-people fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">User Management</h5>
+                    <p class="small text-muted mb-4">Edit permissions, reset passwords, and manage user roles.</p>
+                    <a href="/users" class="btn btn-outline-danger btn-sm rounded-pill px-4 w-100">Manage Users</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm rounded-4 p-3 admin-card">
+                <div class="card-body text-center">
+                    <div class="icon-box bg-secondary bg-opacity-10 text-secondary rounded-circle" style="color: #6610f2 !important; background-color: rgba(102, 16, 242, 0.1) !important;">
+                        <i class="bi bi-laptop fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">Product Catalog</h5>
+                    <p class="small text-muted mb-4">Add new items, update pricing, and edit product specifications.</p>
+                    <a href="/items" class="btn btn-outline-secondary btn-sm rounded-pill px-4 w-100" style="color: #6610f2; border-color: #6610f2;">Manage Products</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer class="container text-center py-4 border-top mt-5">
+    <p class="text-muted small">&copy; 2026 Compucart Internal Management System. Confidential.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

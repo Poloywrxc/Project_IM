@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    :root { 
+        --compu-blue: #1a237e; 
+        --compu-green: #28a745; 
+    }
+    .product-card {
+        background: #fff; 
+        border-radius: 15px; 
+        padding: 1.5rem; 
+        border: 1px solid #eee;
+        transition: 0.3s; 
+        height: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between;
+    }
+    .product-card:hover { 
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
+        transform: translateY(-2px); 
+    }
+    .price-tag { 
+        font-weight: 800; 
+        color: #000; 
+        font-size: 1.1rem; 
+    }
+    .btn-add { 
+        background: var(--compu-blue); 
+        color: #fff; 
+        border-radius: 20px; 
+        font-weight: 600; 
+        padding: 8px 20px; 
+        border: none; 
+        transition: 0.2s;
+    }
+    .btn-add:hover {
+        background: #0d144d;
+        transform: scale(1.05);
+    }
+    .product-img-container { 
+        height: 120px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+    .product-img { 
+        max-height: 100%; 
+        object-fit: contain; 
+    }
+    #pSearch {
+        border: 2px solid #eee;
+    }
+    #pSearch:focus {
+        border-color: var(--compu-blue);
+        box-shadow: none;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Product Catalog</h1>
+        <p class="text-muted">Browse our latest high-performance gear</p>
+        <div class="position-relative w-50 mx-auto">
+            <input type="text" id="pSearch" class="form-control rounded-pill px-4" placeholder="Search by model name...">
+        </div>
+    </div>
+
+    <div class="row g-4" id="pGrid">
+        {% for product in products %}
+        <div class="col-md-4 product-item">
+            <div class="product-card shadow-sm">
+                <div class="row align-items-center">
+                    <div class="col-7">
+                        <h5 class="fw-bold model-name">{{ product.ModelName }}</h5>
+                        <p class="price-tag">₱{{ "{:,.2f}".format(product.SellingPrice) }}</p>
+                    </div>
+                    <div class="col-5 product-img-container">
+                        <img src="/static/images/{{ product.ModelName.lower().replace(' ', '_') }}.png" 
+                             class="product-img" 
+                             onerror="this.onerror=null; this.src='/static/images/default.png';">
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                    <span class="badge {% if product.Status == 'Available' %}bg-success{% else %}bg-secondary{% endif %} rounded-pill px-3">
+                        {{ product.Status }}
+                    </span>
+                    <button class="btn btn-add" onclick="addToCart('{{ product.ProductID }}')">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function addToCart(id) {
+        if (!id) return;
+        // This triggers the Python add_to_cart function
+        window.location.href = "/add-to-cart?id=" + id;
+    }
+
+    // Search Filtering logic
+    document.getElementById('pSearch').addEventListener('input', function(e) {
+        let val = e.target.value.toLowerCase();
+        document.querySelectorAll('.product-item').forEach(item => {
+            let name = item.querySelector('.model-name').innerText.toLowerCase();
+            item.style.display = name.includes(val) ? "block" : "none";
+        });
+    });
+</script>
+{% endblock %}

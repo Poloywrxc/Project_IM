@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    :root { --compu-blue: #002D72; }
+    
+    /* Status Badge Styling */
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+    .status-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-cancelled { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status-completed { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    
+    /* Payment Info Layout */
+    .payment-details { line-height: 1.2; }
+    .payment-method-label {
+        font-weight: 700;
+        color: var(--compu-blue);
+        margin-bottom: 3px;
+        display: block;
+    }
+    .money-text { font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
+
+    /* Table Improvements */
+    .order-table-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .btn-action {
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">Order History</h2>
+            <p class="text-muted">View your transactions and track fulfillment status.</p>
+        </div>
+        <span class="badge bg-secondary rounded-pill px-3 py-2">Records Found: {{ orders|length }}</span>
+    </div>
+
+    <div class="order-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Date</th>
+                        <th>Fulfillment</th>
+                        <th>Payment Details</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="order-row" data-id="{{ order.transaction_id }}">
+                        <td class="ps-4 fw-bold">#{{ order.transaction_id }}</td>
+                        <td class="text-muted small">{{ order.created_at }}</td>
+                        <td>
+                            <div class="fw-bold">{{ order.fulfillment_method }}</div>
+                            <small class="text-muted">Rider: {{ order.rider_name or 'None' }}</small>
+                        </td>
+                        <td>
+                            <div class="payment-details">
+                                <span class="payment-method-label">
+                                    <i class="bi {% if order.payment_method == 'Cash' %}bi-cash-stack{% else %}bi-credit-card{% endif %} me-1"></i>
+                                    {{ order.payment_method }}
+                                </span>
+                                
+                                {% if order.payment_method == 'Cash' %}
+                                <div class="money-text text-muted">
+                                    Tendered: ₱{{ "{:,.2f}".format(order.amount_tendered or 0) }}
+                                </div>
+                                <div class="money-text text-success fw-bold">
+                                    Change: ₱{{ "{:,.2f}".format(order.change_given or 0) }}
+                                </div>
+                                {% else %}
+                                <small class="text-muted italic">Electronic Payment</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold fs-6">₱{{ "{:,.2f}".format(order.total_amount) }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ order.status.lower() }}">
+                                {{ order.status }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                {% if order.status == 'Pending' %}
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="cancelTransaction(this)">
+                                    Cancel
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-secondary btn-action ms-1" onclick="deleteTransaction(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted d-block mb-2"></i>
+                            <p class="text-muted">You haven't placed any orders yet.</p>
+                            <a href="/products" class="btn btn-primary btn-sm rounded-pill px-4">Shop Now</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Updates status to 'Cancelled'
+    async function cancelTransaction(btn) {
+        const row = btn.closest('.order-row');
+        const id = row.dataset.id;
+        if(confirm(`Are you sure you want to cancel Order #${id}?`)) {
+            const res = await fetch(`/cancel-order?id=${id}`, { method: 'POST' });
+            if (res.ok) {
+                location.reload();
+            } else {
+                alert("Failed to cancel order.");
+            }
+        }
+    }
+
+    // Permanently deletes the order record
+    async function deleteTransaction(btn) {
+        const row = btn.closest('.order-row');
+        const id = row.dataset.id;
+        if(confirm("Permanently delete this order record? This cannot be undone.")) {
+            const res = await fetch(`/delete-order?id=${id}`, { method: 'POST' });
+            if (res.ok) {
+                row.style.transition = "0.5s";
+                row.style.opacity = "0";
+                setTimeout(() => row.remove(), 500);
+            } else {
+                alert("Failed to delete record.");
+            }
+        }
+    }
+</script>
+{% endblock %}

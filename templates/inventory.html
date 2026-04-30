@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Monitor | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --compu-blue: #002D72; }
+        body { background-color: #f8f9fa; }
+        .admin-nav { background-color: var(--compu-blue); padding: 1rem 2rem; border-bottom: 3px solid #001a44; }
+        .text-compu-blue { color: var(--compu-blue); }
+        .table-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .type-badge { font-size: 0.7rem; font-weight: 800; padding: 0.4em 0.7em; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<header class="admin-nav d-flex justify-content-between align-items-center shadow mb-5">
+    <h4 class="fw-bold text-white mb-0">COMPUCART <span class="badge bg-danger ms-2">ADMIN</span></h4>
+    <a href="/admin" class="btn btn-sm btn-outline-light rounded-pill px-4 fw-bold">Dashboard</a>
+</header>
+
+<div class="container-fluid px-5">
+    <div class="row mb-4 align-items-end">
+        <div class="col">
+            <h2 class="fw-bold text-compu-blue">Inventory Movements</h2>
+            <p class="text-muted">Track stock changes and warehouse logs.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addMovementModal">
+                <i class="bi bi-plus-lg me-2"></i>Record Movement
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Timestamp</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>Admin</th>
+                        <th>Reason</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                    <tr>
+                        <td class="ps-4 small text-muted">{{ m.moved_at }}</td>
+                        <td class="fw-bold">{{ m.model_name }}</td>
+                        <td>
+                            {% if m.type == 'IN' %}
+                                <span class="type-badge bg-success-subtle text-success border border-success">STOCK IN</span>
+                            {% elif m.type == 'OUT' %}
+                                <span class="type-badge bg-danger-subtle text-danger border border-danger">STOCK OUT</span>
+                            {% else %}
+                                <span class="type-badge bg-warning-subtle text-warning border border-warning">ADJUST</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">{{ m.quantity }}</td>
+                        <td class="small">{{ m.admin_name }}</td>
+                        <td>{{ m.reason or '---' }}</td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="openEditModal('{{ m.movement_id }}', '{{ m.quantity }}', '{{ m.reason }}', '{{ m.type }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/delete-movement/{{ m.movement_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this record?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addMovementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/record-movement" method="POST" class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Movement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Product</label>
+                    <select name="product_id" class="form-select" required>
+                        {% for p in products %}
+                        <option value="{{ p.product_id }}">{{ p.model_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Type</label>
+                        <select name="type" class="form-select">
+                            <option value="IN">Stock In (+)</option>
+                            <option value="OUT">Stock Out (-)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Qty</label>
+                        <input type="number" name="quantity" class="form-control" required min="1">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reason</label>
+                    <input type="text" name="reason" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Save</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editMovementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/edit-movement" method="POST" class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Edit Movement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="movement_id" id="edit_id">
+                <div class="mb-3">
+                    <label class="form-label">Action Type</label>
+                    <select name="type" id="edit_type" class="form-select">
+                        <option value="IN">Stock In (+)</option>
+                        <option value="OUT">Stock Out (-)</option>
+                        <option value="ADJUST">Adjustment</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Qty</label>
+                    <input type="number" name="quantity" id="edit_qty" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reason</label>
+                    <input type="text" name="reason" id="edit_reason" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-dark">Update</button></div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function openEditModal(id, qty, reason, type) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_qty').value = qty;
+        document.getElementById('edit_reason').value = reason;
+        document.getElementById('edit_type').value = type;
+        new bootstrap.Modal(document.getElementById('editMovementModal')).show();
+    }
+</script>
+</body>
+</html>

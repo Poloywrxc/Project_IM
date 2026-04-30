@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Directory | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --compu-blue: #002D72; }
+        body { background-color: #f8f9fa; }
+        .admin-nav { background-color: var(--compu-blue); padding: 1rem 2rem; }
+        .table-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    </style>
+</head>
+<body>
+
+<header class="admin-nav d-flex justify-content-between align-items-center shadow mb-5">
+    <h4 class="fw-bold text-white mb-0">COMPUCART <span class="badge bg-danger ms-2">ADMIN</span></h4>
+    <a href="/admin" class="btn btn-sm btn-outline-light rounded-pill px-4 fw-bold">Dashboard</a>
+</header>
+
+<div class="container px-5">
+    <div class="row mb-4 align-items-end">
+        <div class="col">
+            <h2 class="fw-bold" style="color: var(--compu-blue);">Supplier Management</h2>
+            <p class="text-muted">Maintain records of company partners and their primary handlers.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                <i class="bi bi-building-add me-2"></i>Register Supplier
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Company Name</th>
+                        <th>Handler</th>
+                        <th>Contact info</th>
+                        <th>Address</th>
+                        <th class="pe-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in suppliers %}
+                    <tr>
+                        <td class="ps-4 text-muted">#{{ s.supplier_id }}</td>
+                        <td class="fw-bold">{{ s.company_name }}</td>
+                        <td>{{ s.handler or '---' }}</td>
+                        <td>
+                            <div class="small"><i class="bi bi-telephone me-1"></i> {{ s.contact_number }}</div>
+                            <div class="small text-primary"><i class="bi bi-envelope me-1"></i> {{ s.email }}</div>
+                        </td>
+                        <td class="text-muted small">{{ s.address }}</td>
+                        <td class="pe-4 text-center">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary px-3" 
+                                        onclick="openEditModal('{{ s.supplier_id }}', '{{ s.company_name }}', '{{ s.handler }}', '{{ s.contact_number }}', '{{ s.email }}', '{{ s.address }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/delete-supplier/{{ s.supplier_id }}" class="btn btn-sm btn-outline-danger px-3" onclick="return confirm('Remove this supplier?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted">No suppliers found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSupplierModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/add-supplier" method="POST" class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Supplier Registration</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label fw-bold">Company Name</label><input type="text" name="company_name" class="form-control" required></div>
+                <div class="mb-3"><label class="form-label fw-bold">Handler</label><input type="text" name="handler" class="form-control"></div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label fw-bold">Contact</label><input type="text" name="contact_number" class="form-control"></div>
+                    <div class="col-md-6 mb-3"><label class="form-label fw-bold">Email</label><input type="email" name="email" class="form-control"></div>
+                </div>
+                <div class="mb-3"><label class="form-label fw-bold">Address</label><textarea name="address" class="form-control" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary rounded-pill px-4">Save Supplier</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editSupplierModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/edit-supplier" method="POST" class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Edit Supplier</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="supplier_id" id="edit_id">
+                <div class="mb-3"><label class="form-label fw-bold">Company Name</label><input type="text" name="company_name" id="edit_name" class="form-control" required></div>
+                <div class="mb-3"><label class="form-label fw-bold">Handler</label><input type="text" name="handler" id="edit_handler" class="form-control"></div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label class="form-label fw-bold">Contact</label><input type="text" name="contact_number" id="edit_contact" class="form-control"></div>
+                    <div class="col-md-6 mb-3"><label class="form-label fw-bold">Email</label><input type="email" name="email" id="edit_email" class="form-control"></div>
+                </div>
+                <div class="mb-3"><label class="form-label fw-bold">Address</label><textarea name="address" id="edit_address" class="form-control" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-dark rounded-pill px-4">Update Supplier</button></div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function openEditModal(id, name, handler, contact, email, address) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_handler').value = handler;
+        document.getElementById('edit_contact').value = contact;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_address').value = address;
+        new bootstrap.Modal(document.getElementById('editSupplierModal')).show();
+    }
+</script>
+</body>
+</html>
