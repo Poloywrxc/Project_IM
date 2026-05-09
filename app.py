@@ -210,24 +210,31 @@ def cancel_order(request):
             db.close()
     return Response("Method Not Allowed", status=405)
 
-def delete_order(request):
-    """Permanently removes the order via POST"""
+def delete_orders(request):
+    """Handles bulk deletion of multiple order IDs sent via JSON body"""
     if request.method == 'POST':
-        order_id = request.args.get('id')
-        if not order_id:
-            return Response("Missing ID", status=400)
-
-        db = get_db()
         try:
-            db.execute("DELETE FROM order_transactions WHERE order_transaction_id = ?", (order_id,))
+            # Parse the JSON list of IDs sent from your JavaScript 
+            data = json.loads(request.data)
+            order_ids = data.get('ids', [])
+
+            if not order_ids:
+                return Response("No IDs provided", status=400)
+
+            db = get_db()
+            # Use SQLite 'IN' operator with placeholders for multiple IDs [cite: 22]
+            placeholders = ','.join(['?'] * len(order_ids))
+            query = f"DELETE FROM order_transactions WHERE order_transaction_id IN ({placeholders})"
+            
+            db.execute(query, order_ids)
             db.commit()
-            return Response("Deleted", status=200)
+            return Response("Deleted Successfully", status=200)
         except Exception as e:
             return Response(str(e), status=500)
         finally:
             db.close()
     return Response("Method Not Allowed", status=405)
-    
+
 def home(request):
     return render("home.html", title="Home")
 
@@ -741,7 +748,7 @@ url_map = Map([
     Rule("/cancel-order", endpoint="cancel_order"),
     Rule("/remove-from-cart", endpoint="remove_from_cart"),
     Rule("/about", endpoint="about"),
-    Rule("/delete-order", endpoint="delete_order"),
+    Rule("/delete-orders", endpoint="delete_orders"),
     Rule("/transactions", endpoint="transactions_view"),
     Rule("/users", endpoint="users_management"),
     Rule("/add-user", endpoint="add_user"),

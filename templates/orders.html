@@ -38,6 +38,9 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-compu-blue"><i class="bi bi-bag-check me-2"></i>My Orders</h2>
+        <button id="deleteSelectedBtn" class="btn btn-danger rounded-pill px-4 shadow-sm d-none" onclick="deleteSelectedOrders()">
+            <i class="bi bi-trash3 me-2"></i>Delete Selected
+        </button>
     </div>
 
     <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
@@ -45,17 +48,23 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th class="ps-4">Order ID & Date</th>
+                        <th class="ps-4">
+                            <input type="checkbox" id="selectAll" class="form-check-input" onclick="toggleAll(this)">
+                        </th>
+                        <th>Order ID & Date</th>
                         <th>Product Name</th>
                         <th>Payment Details</th>
                         <th>Status</th>
                         <th class="pe-4 text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="orderTableBody">
                     {% for order in orders %}
                     <tr class="order-row" data-id="{{ order.transaction_id }}">
                         <td class="ps-4">
+                            <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.transaction_id }}" onclick="updateBulkButton()">
+                        </td>
+                        <td>
                             <div class="fw-bold text-dark">#{{ order.transaction_id }}</div>
                             <div class="small text-muted">{{ order.created_at }}</div>
                         </td>
@@ -68,6 +77,7 @@
                                         {% elif 'credit' in order.payment_method|lower %}bi-credit-card
                                         {% else %}bi-wallet2{% endif %} me-1">
                                     </i>
+                                    {{ order.payment_method }}
                                 </span>
                                 <div class="text-success fw-bold small">
                                     ₱{{ "{:,.2f}".format(order.total_amount) }}
@@ -94,7 +104,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">You haven't placed any orders yet.</td>
+                        <td colspan="6" class="text-center py-5 text-muted">You haven't placed any orders yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -103,40 +113,40 @@
     </div>
 </div>
 
-<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
+        <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
+                <h5 class="modal-title" id="orderModalLabel fw-bold">Order Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="text-center mb-4">
-                    <p class="text-muted mb-1 small uppercase fw-bold">Transaction ID</p>
-                    <h3 class="fw-bold text-dark" id="m_id">#000</h3>
-                </div>
-                
-                <div class="row g-3">
+                <div class="row mb-3">
                     <div class="col-6">
-                        <label class="text-muted small d-block">Order Date</label>
-                        <span id="m_date" class="fw-bold">--</span>
+                        <label class="text-muted small d-block">Order ID</label>
+                        <span id="m_id" class="fw-bold text-dark"></span>
                     </div>
                     <div class="col-6 text-end">
                         <label class="text-muted small d-block">Status</label>
-                        <span id="m_status" class="badge">--</span>
+                        <span id="m_status" class="status-badge"></span>
                     </div>
-                    <div class="col-12 border-top pt-3">
-                        <label class="text-muted small d-block">Product Purchased</label>
-                        <span id="m_product" class="fs-5 fw-bold text-compu-blue">--</span>
-                    </div>
-                    <div class="col-6 border-top pt-3">
-                        <label class="text-muted small d-block">Payment Method</label>
-                        <span id="m_payment" class="fw-bold">--</span>
-                    </div>
-                    <div class="col-6 border-top pt-3 text-end">
-                        <label class="text-muted small d-block">Total Paid</label>
-                        <span id="m_total" class="fs-5 fw-bold text-success">₱0.00</span>
-                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small d-block">Date & Time</label>
+                    <span id="m_date" class="text-dark"></span>
+                </div>
+                <hr class="text-muted opacity-25">
+                <div class="mb-3">
+                    <label class="text-muted small d-block">Product</label>
+                    <span id="m_product" class="fw-bold text-dark fs-5"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small d-block">Payment Method</label>
+                    <span id="m_payment" class="text-dark"></span>
+                </div>
+                <div class="mt-4 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-secondary">Total Amount Paid</span>
+                    <span id="m_total" class="fs-4 fw-bold text-success"></span>
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -147,20 +157,27 @@
 </div>
 
 <script>
+    // View Details Function
     function viewOrderDetails(id, product, total, method, status, date) {
-        // Set content
+        // Populate the modal fields using the IDs added above
         document.getElementById('m_id').innerText = '#' + id;
         document.getElementById('m_date').innerText = date;
         document.getElementById('m_product').innerText = product;
         document.getElementById('m_payment').innerText = method;
-        document.getElementById('m_total').innerText = '₱' + parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
         
-        // Handle Status Badge
+        // Formatting currency
+        const formattedTotal = '₱' + parseFloat(total).toLocaleString(undefined, {
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2
+        });
+        document.getElementById('m_total').innerText = formattedTotal;
+
+        // Dynamic Status Badge
         const statusBadge = document.getElementById('m_status');
         statusBadge.innerText = status;
         statusBadge.className = 'status-badge status-' + status.toLowerCase();
 
-        // Show Modal
+        // Show the Modal
         var myModal = new bootstrap.Modal(document.getElementById('orderModal'));
         myModal.show();
     }
@@ -169,11 +186,58 @@
         const row = btn.closest('.order-row');
         const id = row.dataset.id;
         if(confirm(`Are you sure you want to cancel Order #${id}?`)) {
-            const res = await fetch(`/cancel-order?id=${id}`, { method: 'POST' });
-            if (res.ok) {
-                location.reload();
-            } else {
-                alert("Action failed.");
+            try {
+                const res = await fetch(`/cancel-order?id=${id}`, { method: 'POST' });
+                if (res.ok) { 
+                    location.reload(); 
+                } else { 
+                    alert("Action failed."); 
+                }
+            } catch (err) {
+                alert("Network error.");
+            }
+        }
+    }
+
+    /* --- BULK ACTIONS --- */
+
+    function toggleAll(masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.order-checkbox');
+        checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+        updateBulkButton();
+    }
+
+    function updateBulkButton() {
+        const selectedCount = document.querySelectorAll('.order-checkbox:checked').length;
+        const btn = document.getElementById('deleteSelectedBtn');
+        if (selectedCount > 0) {
+            btn.classList.remove('d-none');
+            btn.innerHTML = `<i class="bi bi-trash3 me-2"></i>Delete Selected (${selectedCount})`;
+        } else {
+            btn.classList.add('d-none');
+        }
+    }
+
+    async function deleteSelectedOrders() {
+        const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+        const ids = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (confirm(`Are you sure you want to delete ${ids.length} selected order(s)?`)) {
+            try {
+                const res = await fetch('/delete-orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: ids })
+                });
+
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert("Delete failed.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred.");
             }
         }
     }
